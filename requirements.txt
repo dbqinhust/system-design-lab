@@ -1,0 +1,7 @@
+fastapi==0.141.1
+uvicorn==0.52.4
+locust==2.46.4
+sqlalchemy==2.0.52
+psycopg[binary]==3.3.5
+pydantic==2.13.4
+python-dotenv==1.1.1

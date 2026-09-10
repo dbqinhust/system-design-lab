@@ -1,0 +1,9 @@
+services:
+  postgres-sd:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: system_design
+    ports:
+      - "5432:5432"

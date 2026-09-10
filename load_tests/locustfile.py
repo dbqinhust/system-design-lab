@@ -1,10 +1,9 @@
-from locust import HttpUser, task, between
+from locust import HttpUser, constant, task
 
 
 class APIUser(HttpUser):
-    wait_time = between(0.1, 0.5)
+    wait_time = constant(0)
 
     @task
-    def fast_endpoint(self):
-        self.client.get("/unstable")
-        
+    def pool_test(self):
+        self.client.get("/pool-test")
