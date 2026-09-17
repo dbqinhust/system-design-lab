@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, String, Text, event, func
+from sqlalchemy import BigInteger, DateTime, String, Text, UniqueConstraint, event, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.schema import CreateSchema
 
@@ -20,7 +20,10 @@ event.listen(
 
 class URL(Base):
     __tablename__ = "urls"
-    __table_args__ = {"schema": "database_connection"}
+    __table_args__ = (
+        UniqueConstraint("short_code", name="uq_urls_short_code"),
+        {"schema": "database_connection"},
+    )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     short_code: Mapped[str] = mapped_column(String(16), nullable=False)

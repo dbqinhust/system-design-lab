@@ -3,9 +3,10 @@ from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from sqlalchemy import select, text
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from app.cache import cache_url, get_cached_url, invalidate_url
 from app.database import get_session
 from app.models import URL
 from app.schemas import URLCreate, URLRead
@@ -21,19 +22,34 @@ DatabaseSession = Annotated[Session, Depends(get_session)]
 def create_url(payload: URLCreate, session: DatabaseSession):
     url = URL(**payload.model_dump())
     session.add(url)
-    session.commit()
+    try:
+        session.commit()
+    except IntegrityError as exc:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Short code already exists",
+        ) from exc
     session.refresh(url)
+    invalidate_url(url.short_code)
     return url
 
 
 @app.get("/urls/{short_code}", response_model=URLRead)
 def get_url(short_code: str, session: DatabaseSession):
+    cached_url = get_cached_url(short_code)
+    if cached_url is not None:
+        return cached_url
+
     url = session.scalar(
         select(URL).where(URL.short_code == short_code).order_by(URL.id).limit(1)
     )
     if url is None:
         raise HTTPException(status_code=404, detail="URL not found")
-    return url
+
+    response = URLRead.model_validate(url)
+    cache_url(response)
+    return response
 
 
 @app.get("/pool-test")
